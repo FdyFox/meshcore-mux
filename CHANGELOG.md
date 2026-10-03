@@ -4,7 +4,7 @@
 
 ## Unreleased
 
-- (none)
+- CI: update GitHub Actions to their current major versions (`actions/checkout@v7`, `actions/setup-go@v7`, `docker/metadata-action@v6`, `docker/setup-buildx-action@v4`, `docker/login-action@v4`, `docker/build-push-action@v7`), which run on Node.js 24 instead of the deprecated Node.js 20.
 
 ---
 
