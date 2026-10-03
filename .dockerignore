@@ -1,0 +1,16 @@
+# Allowlist the build context: never send the local toolchain, built binaries,
+# git history, or local configuration files to a Docker builder.
+**
+!Dockerfile
+!LICENSE
+!go.mod
+!go.sum
+!config.example.yaml
+!cmd/
+!cmd/**
+!internal/
+!internal/**
+
+# Editor backups remain excluded even inside the allowed source directories.
+**/*~
+**/.*.swp

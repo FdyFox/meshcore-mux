@@ -1,0 +1,4 @@
+/.tools/
+/out/
+/config.yaml
+.env

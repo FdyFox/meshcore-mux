@@ -1,0 +1,30 @@
+# systemd unit. Install the binary to /usr/local/bin and the configuration to
+# /etc/meshcore-mux/config.yaml (readable by the dynamic service user).
+[Unit]
+Description=meshcore-mux MeshCore TCP multiplexer
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+# Writable /var/lib/meshcore-mux for persistence.state_file.
+StateDirectory=meshcore-mux
+StateDirectoryMode=0700
+ExecStart=/usr/local/bin/meshcore-mux --config /etc/meshcore-mux/config.yaml
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

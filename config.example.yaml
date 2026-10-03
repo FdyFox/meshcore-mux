@@ -1,0 +1,72 @@
+# meshcore-mux configuration
+#
+# Start with:   meshcore-mux --config config.yaml
+#
+# Every key is optional; missing keys keep the default shown here.
+# Command-line flags given explicitly override the values in this file.
+# Durations accept "20s", "1m30s", "500ms" or a plain number of seconds.
+# Show the effective configuration with: meshcore-mux --config config.yaml --print-config
+
+# The physical companion node. Only the mux connects to it.
+upstream:
+  host: 192.168.1.50
+  port: 5000
+
+# Where downstream apps connect.
+listen:
+  # 127.0.0.1 = this machine only. Use 0.0.0.0 for other devices (and inside Docker).
+  # There is no authentication: never expose these ports to the internet.
+  host: 127.0.0.1
+  # Shared port for any number of short-lived clients (e.g. meshcore-cli).
+  multi_client_port: 5001
+  # One port per long-lived app (MeshCore-HA, desktop app, phone app, bot).
+  # Each keeps its own inbox while that app is disconnected. Do not share a port between apps.
+  dedicated_client_ports:
+    - 5002
+    - 5003
+
+# Messages kept per dedicated port while its app is offline (RAM only, lost on restart).
+offline_queue_size: 256
+
+# Drop radio-retry duplicates of received DMs and channel messages. Recommended.
+deduplicate_received_messages: true
+
+# Sensitive commands. "true" behaves like a directly connected companion.
+security:
+  allow_private_key_export: true
+  allow_private_key_import: true
+  allow_factory_reset: true
+
+# Keep dedicated-port queues across restarts of the mux (disabled by default).
+# Without it, messages already fetched for a disconnected dedicated client are
+# lost when the mux restarts. Messages still on the companion are never lost.
+persistence:
+  enabled: false
+  # Holds received message text in plain form; it is created with mode 0600.
+  # The directory must be writable (systemd: StateDirectory, Docker: a volume).
+  state_file: /var/lib/meshcore-mux/state.json
+  # How often changes are written at most. After a crash, changes from this
+  # window may be lost or delivered twice; a normal shutdown always saves.
+  flush_interval: 1s
+
+timing:
+  # Maximum wait for a companion reply (also the idle limit while listing contacts).
+  response_timeout: 20s
+  # Maximum total duration of a contacts listing.
+  contacts_timeout: 30s
+  # How often connected apps are reminded to check for new messages.
+  poll_interval: 5s
+
+# Internal limits. Normally there is no reason to change these.
+advanced:
+  command_limit: 16                # queued commands per connection before it is closed
+  command_age: 15s                 # queued commands older than this are rejected
+  virtual_sync_timeout: 30s
+  inbox_entries: 256               # per multi-client connection
+  output_frames: 512               # pending writes per connection before it is closed
+  connect_timeout: 5s
+  frame_timeout: 5s
+  write_timeout: 5s
+  startup_timeout: 15s
+  signing_timeout: 30s
+  radio_uncertainty_timeout: 60s
