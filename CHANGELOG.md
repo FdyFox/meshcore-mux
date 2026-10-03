@@ -4,9 +4,7 @@
 
 ## Unreleased
 
-- GitHub Actions workflow: tests on every pull request and push; multi-arch images (`linux/amd64`, `linux/arm64`) on GHCR as `test`/`sha-<commit>` for pushes to `main` and as `<version>`, `<major>.<minor>`, and `latest` for published releases. Releases are checked against `Version` and the changelog.
-- `--version` of test images includes the commit (`0.5.0-test.<commit>`); `Version` can be overridden at build time.
-- The Docker build cross-compiles natively for each target platform instead of using CPU emulation.
+- (none)
 
 ---
 
@@ -16,7 +14,6 @@ Initial release: a Go port of [compumike/meshcore-tcp-mux](https://github.com/co
 
 Additions:
 
-- Optional persistence (`persistence.enabled`): dedicated-client queues, their companion identity, and the deduplication history are saved to a state file and restored on start. Writes are atomic, rate-limited by `persistence.flush_interval`, done off the coordinator goroutine, and always completed on graceful shutdown. A different companion identity, unconfigured ports, invalid entries, and corrupt files are handled with warnings. The Docker image and the systemd example provide a writable `/var/lib/meshcore-mux`.
 - YAML configuration file (`--config`), with defaults for missing keys, errors for unknown keys, and explicit flags overriding the file. `--print-config` prints the effective configuration. See `config.example.yaml`.
 - Logging policy: problems are reported at `WARN`/`ERROR` with their cause instead of only at `DEBUG`.
   - Forced disconnects (`command queue overflow`, `output queue overflow`, `inbox overflow`, `output write deadline`, writer failures) are errors naming the limit.
@@ -24,6 +21,8 @@ Additions:
   - Companion timeouts and protocol errors that end an upstream epoch are errors.
   - Refused clients while the companion is not ready, and undelivered dedicated messages at shutdown, are warnings.
   - Reconnect scheduling and dedicated-client attach/detach are info.
+- Optional persistence (`persistence.enabled`): dedicated-client queues, their companion identity, and the deduplication history are saved to a state file and restored on start. Writes are atomic, rate-limited by `persistence.flush_interval`, done off the coordinator goroutine, and always completed on graceful shutdown. A different companion identity, unconfigured ports, invalid entries, and corrupt files are handled with warnings. The Docker image and the systemd example provide a writable `/var/lib/meshcore-mux`.
+- Multi-arch container images (`linux/amd64`, `linux/arm64`) on `ghcr.io/fdyfox/meshcore-mux`, built by a GitHub Actions workflow that tests every pull request and push: `test` and `sha-<commit>` for pushes to `main` (with the commit in `--version`), `<version>`, `<major>.<minor>`, and `latest` for published releases. Releases are checked against `Version` and this changelog.
 
 Deliberate deviations from the original:
 
