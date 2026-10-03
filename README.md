@@ -35,26 +35,100 @@ Details are in [ARCHITECTURE.md](ARCHITECTURE.md).
 - The **multi-client port** (default `5001`) accepts any number of connections. Good for short-lived clients such as a one-off `meshcore-cli` session.
 - Each **dedicated port** is one stable logical client with its own inbox that is kept while that client is disconnected, like a real companion does. When it reconnects, it receives the (bounded) backlog it missed. Use one dedicated port per long-lived app (MeshCore-HA, desktop app, phone app, bot) and never share one between apps.
 
-## Quick start
+## Quick-start: Docker Compose setup
 
-Build (a project-local Go toolchain in `.tools/go` is used automatically, see [DEVELOPMENT.md](DEVELOPMENT.md)):
+First verify that the companion itself is reachable, for example with `meshcore-cli -t 192.168.1.50 -p 5000`. Then create `compose.yaml`:
+
+```yaml
+services:
+  meshcore-mux:
+    image: ghcr.io/fdyfox/meshcore-mux:latest
+    restart: unless-stopped
+    command:
+      - "--upstream-host"
+      - "192.168.1.50" # Replace this with the companion hostname or IP
+      - "--upstream-port"
+      - "5000"
+      - "--listen-host"
+      - "0.0.0.0" # Must bind to 0.0.0.0 *inside* the container, even if you bind only to localhost in the "ports" section.
+      - "--listen-multi-client-port"
+      - "5001"
+      - "--listen-dedicated-client-port"
+      - "5002"
+      - "--listen-dedicated-client-port"
+      - "5003"
+      - "--listen-dedicated-client-port"
+      - "5004"
+      - "--listen-dedicated-client-port"
+      - "5005"
+      - "--deduplicate-received-messages"
+    ports:
+      - "127.0.0.1:5001-5005:5001-5005/tcp" # Change "127.0.0.1" to "0.0.0.0" if you want to connect to meshcore-mux from other devices.
+    environment:
+      LOG_LEVEL: "INFO" # Change to "DEBUG" for more verbose logging
+    read_only: true
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+```
+
+Replace `192.168.1.50` with the companion's address. Replace `127.0.0.1` with `0.0.0.0` if you want to connect from other devices, such as a phone app. Then start the service:
+
+```sh
+docker compose up -d
+docker compose logs --follow
+```
+
+Now run `meshcore-cli -t 127.0.0.1 -p 5001 ver` to verify that `meshcore-mux` is working.
+
+Reconfigure MeshCore-HA to point to the dedicated port `5002`. Point your desktop app at port `5003`. Point your phone app at `5004`. **You will now be able to send and receive messages simultaneously from all of them!**
+
+Other useful commands:
+
+```sh
+# To stop the service:
+docker compose down
+
+# To upgrade to the latest version of meshcore-mux:
+docker compose pull && docker compose down && docker compose up -d
+```
+
+Images are available for `linux/amd64` and `linux/arm64` (Raspberry Pi with a 64-bit OS). `latest` and version tags such as `0.5.0` are built from releases; `test` follows the `main` branch and is meant for trying out unreleased changes.
+
+### Using a configuration file
+
+Instead of flags, you can mount a YAML configuration file, which is also needed to enable [persistence](#persistence-across-restarts). Copy [config.example.yaml](config.example.yaml) to `config.yaml` next to `compose.yaml`, set `upstream.host`, set `listen.host` to `0.0.0.0`, and replace `command:` with:
+
+```yaml
+    command: ["--config", "/etc/meshcore-mux/config.yaml"]
+    volumes:
+      - ./config.yaml:/etc/meshcore-mux/config.yaml:ro
+      - meshcore-mux-state:/var/lib/meshcore-mux # only needed with persistence enabled
+```
+
+and declare the volume at the top level of `compose.yaml`:
+
+```yaml
+volumes:
+  meshcore-mux-state:
+```
+
+A complete example is in [examples/compose.yaml](examples/compose.yaml). All options are described in [CONFIGURATION.md](CONFIGURATION.md).
+
+## Build from source
+
+A project-local Go toolchain in `.tools/go` is used automatically (see [DEVELOPMENT.md](DEVELOPMENT.md)):
 
 ```sh
 make build
-```
-
-Configure and run:
-
-```sh
-cp config.example.yaml config.yaml                  # set upstream.host and your ports
-out/meshcore-mux --config config.yaml --probe   # verify the companion is reachable
+cp config.example.yaml config.yaml                # set upstream.host and your ports
+out/meshcore-mux --config config.yaml --probe     # verify the companion is reachable
 out/meshcore-mux --config config.yaml
-meshcore-cli -t 127.0.0.1 -p 5001 ver               # verify the mux
+meshcore-cli -t 127.0.0.1 -p 5001 ver             # verify the mux
 ```
 
-Then point MeshCore-HA at `5002`, your desktop app at `5003`, and so on. Flags work as in the original, for example `--upstream-host 192.168.1.50 --upstream-port 5000 --listen-dedicated-client-port 5002 --deduplicate-received-messages`; explicit flags override the file. All options are described in [CONFIGURATION.md](CONFIGURATION.md).
+Flags work as in the original, for example `--upstream-host 192.168.1.50 --upstream-port 5000 --listen-dedicated-client-port 5002 --deduplicate-received-messages`; explicit flags override the file. For systemd, see [examples/meshcore-mux.service](examples/meshcore-mux.service) and [DEVELOPMENT.md](DEVELOPMENT.md).
 
-Container images for `linux/amd64` and `linux/arm64` (Raspberry Pi with a 64-bit OS) are published to `ghcr.io/fdyfox/meshcore-mux`: `latest` and version tags for releases, `test` for the current `main` branch. For Docker Compose and systemd, see [examples/](examples/) and [DEVELOPMENT.md](DEVELOPMENT.md). The listeners have no authentication: never expose them to the Internet.
+The listeners have no authentication or encryption: never expose them to the Internet.
 
 ## Persistence across restarts
 
