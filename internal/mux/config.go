@@ -13,7 +13,7 @@ import (
 // Version is the release identity. Builds may override it, for example for
 // test images: -ldflags "-X github.com/FdyFox/meshcore-mux/internal/mux.Version=0.5.0-test.abc1234".
 // Keep the literal in sync with CHANGELOG.md; the release workflow checks it.
-var Version = "0.5.0"
+var Version = "0.5.1"
 
 // Config holds listener addresses, queue bounds, deadlines, and permissions.
 //
