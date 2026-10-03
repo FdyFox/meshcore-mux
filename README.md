@@ -47,7 +47,6 @@ upstream:
   port: 5000
 
 listen:
-  host: 0.0.0.0 # Must bind to 0.0.0.0 *inside* the container, even if you bind only to localhost in the "ports" section.
   multi_client_port: 5001
   dedicated_client_ports: [5002, 5003, 5004, 5005]
 
@@ -81,7 +80,7 @@ volumes:
   meshcore-mux-state:
 ```
 
-Replace `192.168.1.50` with the companion's address. Replace `127.0.0.1` with `0.0.0.0` in `compose.yaml` if you want to connect from other devices, such as a phone app. Then start the service:
+Replace `192.168.1.50` with the companion's address. `listen.host` is not needed: the image listens on `0.0.0.0` inside the container, and the `ports` entry decides who can connect. As written, only the Docker host itself can; replace `127.0.0.1` with `0.0.0.0` in `compose.yaml` if you want to connect from other devices, such as a phone app. Then start the service:
 
 ```sh
 docker compose up -d
@@ -126,8 +125,6 @@ services:
       - "192.168.1.50" # Replace this with the companion hostname or IP
       - "--upstream-port"
       - "5000"
-      - "--listen-host"
-      - "0.0.0.0" # Must bind to 0.0.0.0 *inside* the container.
       - "--listen-multi-client-port"
       - "5001"
       - "--listen-dedicated-client-port"

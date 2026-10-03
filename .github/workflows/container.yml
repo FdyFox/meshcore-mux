@@ -146,6 +146,11 @@ jobs:
             exit 1
           fi
           docker run --rm "$REF" --help > /dev/null 2>&1
+          # The image must listen on 0.0.0.0 by default (MESHCORE_MUX_LISTEN_HOST).
+          if ! docker run --rm "$REF" --upstream-host companion --upstream-port 5000 --print-config | grep -qx '  host: 0.0.0.0'; then
+            echo "::error::The image does not default listen.host to 0.0.0.0"
+            exit 1
+          fi
 
       - name: Summary
         if: github.event_name != 'pull_request'

@@ -1,8 +1,9 @@
 // Command meshcore-mux shares one TCP-connected MeshCore companion node
 // with multiple companion-protocol clients.
 //
-// Settings come from built-in defaults, then an optional YAML file
-// (--config), then any command-line flags that were set explicitly.
+// Settings come from built-in defaults, then supported environment variables
+// (MESHCORE_MUX_LISTEN_HOST), then an optional YAML file (--config), then any
+// command-line flags that were set explicitly.
 package main
 
 import (
@@ -107,6 +108,7 @@ func run() int {
 	}
 
 	cfg := defaults
+	envApplied := mux.ApplyEnv(&cfg, os.LookupEnv)
 	if configPath != "" {
 		if err := mux.LoadConfigFile(configPath, &cfg); err != nil {
 			return fail(err)
@@ -152,6 +154,9 @@ func run() int {
 		return 0
 	}
 	mux.Log.Infof("meshcore-mux %s", mux.Version)
+	for _, e := range envApplied {
+		mux.Log.Infof("event=config.env_applied %s (config file and flags still take precedence)", e)
+	}
 	if configPath != "" {
 		mux.Log.Infof("event=config.loaded path=%q", configPath)
 	}

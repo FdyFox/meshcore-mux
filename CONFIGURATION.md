@@ -3,8 +3,9 @@
 Settings are resolved in this order, later sources winning:
 
 1. built-in defaults,
-2. the YAML file given with `--config FILE`,
-3. command-line flags that are set explicitly.
+2. the environment variable `MESHCORE_MUX_LISTEN_HOST` (see [Environment](#environment)),
+3. the YAML file given with `--config FILE`,
+4. command-line flags that are set explicitly.
 
 Without `--config`, the binary behaves like the original and is configured with flags only. `--print-config` prints the effective configuration as YAML and exits, which is useful for debugging and as a starting point for your own file.
 
@@ -29,7 +30,7 @@ meshcore-mux --config config.yaml
 |---|---|---|---|
 | `upstream.host` | `--upstream-host` | (required) | companion hostname or IP |
 | `upstream.port` | `--upstream-port` | (required) | companion TCP port, usually `5000` |
-| `listen.host` | `--listen-host` | `127.0.0.1` | listener address; use `0.0.0.0` inside a container |
+| `listen.host` | `--listen-host` | `127.0.0.1` natively, `0.0.0.0` in the container image | listener address |
 | `listen.multi_client_port` | `--listen-multi-client-port` | `5001` | shared port for any number of connections |
 | `listen.dedicated_client_ports` | `--listen-dedicated-client-port` (repeatable) | none | one stable client identity per port |
 | `offline_queue_size` | `--offline-queue-size` | `256` | entries per dedicated queue |
@@ -57,6 +58,15 @@ meshcore-mux --config config.yaml
 
 `--maintenance` and `--allow-private-key-export` are accepted as no-ops for compatibility with older command lines.
 
+## Environment
+
+| Variable | Meaning |
+|---|---|
+| `MESHCORE_MUX_LISTEN_HOST` | overrides the built-in default of `listen.host`; the container image sets it to `0.0.0.0` |
+| `LOG_LEVEL` | log verbosity, see [Logging](#logging) |
+
+Inside a container, `127.0.0.1` is the container itself and unreachable from outside, so the image sets `MESHCORE_MUX_LISTEN_HOST=0.0.0.0`. A `listen.host` in the configuration file or `--listen-host` still overrides it; leave both unset in containers. When the variable is applied, the mux logs `event=config.env_applied`.
+
 ## Endpoints and network access
 
 There are two different endpoints:
@@ -64,7 +74,7 @@ There are two different endpoints:
 - The **upstream endpoint** is the physical companion, such as `192.168.1.50:5000`. Only the mux connects to it.
 - The **downstream endpoints** are the mux listener ports. All participating clients connect to these ports instead of the companion.
 
-Inside a container, keep `listen.host: 0.0.0.0`; Docker's `ports` entries control which host interfaces can reach the listeners. A binding such as `127.0.0.1:5001:5001/tcp` is reachable only from the Docker host. The listeners have no authentication or encryption. Do not expose them to the Internet; use a firewall or VPN.
+Inside a container, the image already listens on `0.0.0.0`; Docker's `ports` entries control which host interfaces can reach the listeners. A binding such as `127.0.0.1:5001:5001/tcp` is reachable only from the Docker host. The listeners have no authentication or encryption. Do not expose them to the Internet; use a firewall or VPN.
 
 ## Multi-client and dedicated ports
 

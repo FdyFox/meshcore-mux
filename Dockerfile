@@ -30,6 +30,9 @@ LABEL org.opencontainers.image.title="meshcore-mux" \
 COPY --from=build /out/meshcore-mux /usr/local/bin/meshcore-mux
 COPY LICENSE /usr/share/licenses/meshcore-mux/LICENSE
 COPY --from=build --chown=10001:10001 /out/state /var/lib/meshcore-mux
+# Inside a container, listening on 127.0.0.1 would be unreachable. Exposure is
+# controlled by Docker's port publishing instead (for example 127.0.0.1:5001:5001).
+ENV MESHCORE_MUX_LISTEN_HOST=0.0.0.0
 USER 10001:10001
 EXPOSE 5001/tcp
 STOPSIGNAL SIGTERM

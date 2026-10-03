@@ -14,9 +14,13 @@ upstream:
 
 # Where downstream apps connect.
 listen:
-  # 127.0.0.1 = this machine only. Use 0.0.0.0 for other devices (and inside Docker).
+  # Listener address. Leave it unset to use the default for where the mux runs:
+  #   - native install: 127.0.0.1 (this machine only)
+  #   - container image: 0.0.0.0 (set by MESHCORE_MUX_LISTEN_HOST in the image);
+  #     the "ports" mapping in compose.yaml then decides who can connect.
+  # Set 0.0.0.0 on a native install to accept other devices (such as a phone app).
   # There is no authentication: never expose these ports to the internet.
-  host: 127.0.0.1
+  # host: 127.0.0.1
   # Shared port for any number of short-lived clients (e.g. meshcore-cli).
   multi_client_port: 5001
   # One port per long-lived app (MeshCore-HA, desktop app, phone app, bot).

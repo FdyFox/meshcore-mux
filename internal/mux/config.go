@@ -6,6 +6,7 @@ package mux
 
 import (
 	"errors"
+	"strings"
 	"time"
 )
 
@@ -127,6 +128,25 @@ func (c *Config) Validate() error {
 		return errors.New("contacts total timeout must not be shorter than its idle timeout")
 	}
 	return nil
+}
+
+// ListenHostEnv names the environment variable that overrides the built-in
+// listen address. The container image sets it to 0.0.0.0, because inside a
+// container 127.0.0.1 is unreachable from outside and Docker's port publishing
+// controls exposure instead. Native installs keep the safe 127.0.0.1 default.
+const ListenHostEnv = "MESHCORE_MUX_LISTEN_HOST"
+
+// ApplyEnv overlays supported environment variables onto cfg. It runs after
+// the defaults and before the configuration file, so the file and explicit
+// flags still take precedence. lookup is os.LookupEnv outside of tests. It
+// returns a description of each applied variable for logging.
+func ApplyEnv(cfg *Config, lookup func(string) (string, bool)) []string {
+	var applied []string
+	if v, ok := lookup(ListenHostEnv); ok && strings.TrimSpace(v) != "" {
+		cfg.ListenHost = strings.TrimSpace(v)
+		applied = append(applied, ListenHostEnv+"="+cfg.ListenHost)
+	}
+	return applied
 }
 
 var clockOrigin = time.Now()

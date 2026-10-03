@@ -76,3 +76,36 @@ func TestMarshalConfigRoundTrips(t *testing.T) {
 		t.Fatalf("round trip lost values: %+v", back)
 	}
 }
+
+func TestListenHostEnvSitsBetweenDefaultsAndFile(t *testing.T) {
+	env := func(vals map[string]string) func(string) (string, bool) {
+		return func(k string) (string, bool) { v, ok := vals[k]; return v, ok }
+	}
+
+	// Without the variable the safe default stays.
+	cfg := DefaultConfig()
+	if applied := ApplyEnv(&cfg, env(nil)); len(applied) != 0 || cfg.ListenHost != "127.0.0.1" {
+		t.Fatalf("default must stay 127.0.0.1, got %q (%v)", cfg.ListenHost, applied)
+	}
+
+	// The variable (as set by the container image) overrides the default ...
+	cfg = DefaultConfig()
+	ApplyEnv(&cfg, env(map[string]string{ListenHostEnv: " 0.0.0.0 "}))
+	if cfg.ListenHost != "0.0.0.0" {
+		t.Fatalf("env not applied: %q", cfg.ListenHost)
+	}
+	// ... survives a config file that does not mention listen.host ...
+	if err := parseConfig([]byte("upstream: {host: x, port: 5000}\n"), &cfg); err != nil || cfg.ListenHost != "0.0.0.0" {
+		t.Fatalf("file without listen.host must keep the env value: %q %v", cfg.ListenHost, err)
+	}
+	// ... and loses against a file that sets it.
+	if err := parseConfig([]byte("listen: {host: 192.168.1.10}\n"), &cfg); err != nil || cfg.ListenHost != "192.168.1.10" {
+		t.Fatalf("file must override env: %q %v", cfg.ListenHost, err)
+	}
+
+	// An empty variable is ignored rather than producing an invalid address.
+	cfg = DefaultConfig()
+	if ApplyEnv(&cfg, env(map[string]string{ListenHostEnv: ""})); cfg.ListenHost != "127.0.0.1" {
+		t.Fatalf("empty env must be ignored: %q", cfg.ListenHost)
+	}
+}

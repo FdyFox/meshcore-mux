@@ -91,7 +91,7 @@ A new option always needs all of the following:
 4. a row in [CONFIGURATION.md](CONFIGURATION.md),
 5. optionally a command-line flag in `main.go`, applied only when explicitly set (`fs.Visit`).
 
-Durations use the `Duration` type in the file.
+Durations use the `Duration` type in the file. Environment variables are not a general configuration source: `MESHCORE_MUX_LISTEN_HOST` exists only so the container image can default to `0.0.0.0`. Do not add more without asking.
 
 The persisted state format (`persistence.go`) is versioned by `stateFileVersion`. A change to its layout must bump the version, and the loader must keep reading the previous version or document that old files are discarded. Existing flags of the original must stay compatible.
 
