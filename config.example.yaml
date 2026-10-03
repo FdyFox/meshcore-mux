@@ -25,7 +25,8 @@ listen:
     - 5002
     - 5003
 
-# Messages kept per dedicated port while its app is offline (RAM only, lost on restart).
+# Messages kept per dedicated port while its app is offline. They live in RAM and
+# are lost on restart unless persistence (below) is enabled.
 offline_queue_size: 256
 
 # Drop radio-retry duplicates of received DMs and channel messages. Recommended.

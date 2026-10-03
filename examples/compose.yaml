@@ -1,15 +1,16 @@
-# Docker Compose example. Run from this directory with: docker compose up -d
-# Copy ../config.example.yaml to ../config.yaml first and set upstream.host.
+# Docker Compose example, identical to the quick-start in README.md.
+# Put this file and a config.yaml (see README.md or ../config.example.yaml)
+# in one directory and run: docker compose up -d
 # Inside the container, listen.host in config.yaml must be 0.0.0.0.
+# To build the image from this repository instead, replace "image:" with "build: ..".
 services:
   meshcore-mux:
-    build: ..
-    image: meshcore-mux:dev # or ghcr.io/fdyfox/meshcore-mux:latest without "build:"
+    image: ghcr.io/fdyfox/meshcore-mux:latest
     restart: unless-stopped
     command: ["--config", "/etc/meshcore-mux/config.yaml"]
     volumes:
-      - ../config.yaml:/etc/meshcore-mux/config.yaml:ro
-      # Only needed with persistence.enabled: true (state_file under /var/lib/meshcore-mux).
+      - ./config.yaml:/etc/meshcore-mux/config.yaml:ro
+      # State file for persistence.enabled: true (state_file under /var/lib/meshcore-mux).
       - meshcore-mux-state:/var/lib/meshcore-mux
     ports:
       - "127.0.0.1:5001-5005:5001-5005/tcp" # Change "127.0.0.1" to "0.0.0.0" to accept connections from other devices.

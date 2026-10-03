@@ -43,9 +43,11 @@ meshcore-cli -t 127.0.0.1 -p 5001 list
 ## Docker
 
 ```sh
-make docker            # builds meshcore-mux:dev for the local architecture
-docker compose -f examples/compose.yaml up -d
+make docker                                   # builds meshcore-mux:dev for the local architecture
+docker run --rm meshcore-mux:dev --version    # quick check of the local image
 ```
+
+To run the local image with Docker Compose, use [examples/compose.yaml](examples/compose.yaml) with `image: meshcore-mux:dev` (or `build: ..`) instead of the published image.
 
 The multi-stage [Dockerfile](Dockerfile) runs `go vet` and the tests, builds a static binary for the target platform (`TARGETOS`/`TARGETARCH`, so `docker buildx build --platform linux/amd64,linux/arm64` works), and copies only the binary and license into a `scratch` image running as UID 10001. [.dockerignore](.dockerignore) allowlists the build context so the local toolchain, binaries, and configuration files are never sent to the builder. The image needs only the configuration file, plus a volume at `/var/lib/meshcore-mux` when persistence is enabled; it can run with `read_only: true` and `cap_drop: ["ALL"]`.
 
